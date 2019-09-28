@@ -23,7 +23,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="user in users" :key="user.id">
+                                <tr v-for="user in users.data" :key="user.id">
                                     <td>{{ user.id }}</td>
                                     <td>{{ user.name }}</td>
                                     <td>{{ user.email }}</td>
@@ -44,6 +44,13 @@
                         </table>
                     </div>
                     <!-- /.card-body -->
+                    <div class="card-footer">
+                        <!-- <ul>
+                            <li v-for="post in laravelData.data" :key="post.id">{{ post.title }}</li>
+                        </ul> -->
+
+                        <pagination :data="users" @pagination-change-page="getResults"></pagination>
+                    </div>
                 </div>
                 <!-- /.card -->
             </div>
@@ -119,7 +126,7 @@
 import { setInterval } from 'timers';
     export default {
         data(){
-            return{
+            return {
                 editMode: false,
                 users: {
 
@@ -136,6 +143,13 @@ import { setInterval } from 'timers';
             }
         },
         methods:{
+
+            getResults(page = 1){
+                axios.get('api/user?page=' + page)
+				.then(response => {
+					this.users = response.data;
+				})
+            },
 
             newModal(){
                 this.editMode = false;
@@ -170,7 +184,7 @@ import { setInterval } from 'timers';
                 this.form.clear();
             },
             loadUsers(){
-                axios.get('api/user').then(({ data }) => (this.users = data.data));
+                axios.get('api/user').then(({ data }) => (this.users = data));
             },
             createUser(){
                 this.$Progress.start();
@@ -188,7 +202,7 @@ import { setInterval } from 'timers';
 
                 })
                 .catch(() => {
-
+                    this.$Progress.fail();
                 });
                 
             },

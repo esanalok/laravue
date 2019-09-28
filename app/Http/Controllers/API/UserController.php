@@ -18,11 +18,11 @@ class UserController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth');
+        $this->middleware('auth:api');
     }
 
 
-    
+
     /**
      * Display a listing of the resource.
      *
@@ -30,7 +30,7 @@ class UserController extends Controller
      */
     public function index()
     {
-        return User::latest()->paginate(10);
+        return User::latest()->paginate(5);
     }
 
     /**
@@ -61,6 +61,59 @@ class UserController extends Controller
 
         return $user;
     }
+
+    /**
+     * Display the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function profile()
+    {
+        return auth('api')->user();
+    }
+
+
+
+    public function updateProfile(Request $request)
+    {
+        $user = auth('api')->user();
+
+        $this->validate($request, [
+            'name' => 'required|string|max:255',
+            'email' => 'required|string||max:255|unique:users,email,'.$user->id,
+            'password' => $request->password != null ? 'sometimes|required|min:8' : ''
+
+        ]);
+
+        if($request->photo != $user->photo){
+            $name = time().'.' . explode('/', explode(':', substr($request->photo, 0, strpos($request->photo, ';')))[1])[1];
+
+            \Image::make($request->photo)->save(public_path('img/profile/').$name);
+
+            $request->merge(['photo' => $name]);
+
+
+            $userPhoto = public_path('img/profile/').$user->photo;
+
+            if(file_exists($userPhoto)){
+                @unlink($userPhoto);
+            }
+        }
+
+        if(!empty($request->password)){
+            $request->merge(['password' => Hash::make($request->password)]);
+        }
+        else{
+            $request->merge(['password' => $user->password]);
+        }
+
+        $user->update($request->all());
+        return $request->photo;
+        
+    }
+
+
 
     /**
      * Display the specified resource.
